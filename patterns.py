@@ -1,4 +1,5 @@
 import math
+from itertools import combinations
 
 # DO NOT CHANGE THE FOLLOWING LINE
 def apriori(itemsets, threshold):
@@ -11,7 +12,9 @@ def apriori(itemsets, threshold):
 
     for sets in itemsets:
         for item in sets:
-            possible_items.update({item: 0})
+            temp = set()
+            temp.add(item)
+            possible_items.update({frozenset(temp): 0})
 
     while(not stop):
         for item in possible_items.keys():
@@ -46,13 +49,163 @@ def apriori(itemsets, threshold):
     # e.g. [(set(items), 0.7), (set(otheritems), 0.74), ...]
     return previous_frequent
 
-    
 # DO NOT CHANGE THE FOLLOWING LINE
 def association_rules(itemsets, frequent_itemsets, metric, metric_threshold):
     # DO NOT CHANGE THE PRECEDING LINE
+    rule_set=[]
+    finished_rule_set=[]
+    rules = {}
+    for items in frequent_itemsets:
+        for k in range(1, len(items[0])):
+            temp = list(items[0])
+            temp = list(combinations(temp, k))
+            for combo in temp:
+                condition = set(combo)
+                effect = set(items[0]).difference(condition)
+                rules.update({frozenset(condition): effect})
+        rule_set.append(rules.copy())
+        rules.clear()
     
+    if metric == 'lift':
+        index = 0
+        for items in frequent_itemsets:
+            for condition in rule_set[index].keys():
+                support_A = 0
+                support_B = 0
+                
+                for sets in itemsets:
+                    if(sets.issuperset(condition)):
+                        support_A += 1
+                    if(sets.issuperset(rule_set[index][condition])):
+                        support_B += 1
+                
+                support_A /= len(itemsets)
+                support_B /= len(itemsets)
+
+                #P(B|A)
+                confidence = items[1]/support_A
+
+                lift = confidence/support_B
+
+                if(lift > metric_threshold):
+                    finished_rule_set.append((set(condition), set(rule_set[index][condition]), lift))
+            
+            index += 1
+    elif metric == 'all':
+        index = 0
+        for items in frequent_itemsets:
+            for condition in rule_set[index].keys():
+                support_A = 0
+                support_B = 0
+                
+                for sets in itemsets:
+                    if(sets.issuperset(condition)):
+                        support_A += 1
+                    if(sets.issuperset(rule_set[index][condition])):
+                        support_B += 1
+                
+                support_A /= len(itemsets)
+                support_B /= len(itemsets)
+                
+                #P(B|A)
+                confidence_a = items[1]/support_A
+                
+                #P(A|B)
+                confidence_b = items[1]/support_B
+
+                alls = min(confidence_a, confidence_b)
+
+                if(alls > metric_threshold):
+                    finished_rule_set.append((set(condition), set(rule_set[index][condition]), alls))
+            
+            index += 1
+    elif metric == 'max':
+        index = 0
+        for items in frequent_itemsets:
+            for condition in rule_set[index].keys():
+                support_A = 0
+                support_B = 0
+                
+                for sets in itemsets:
+                    if(sets.issuperset(condition)):
+                        support_A += 1
+                    if(sets.issuperset(rule_set[index][condition])):
+                        support_B += 1
+                
+                support_A /= len(itemsets)
+                support_B /= len(itemsets)
+                
+                #P(B|A)
+                confidence_a = items[1]/support_A
+                
+                #P(A|B)
+                confidence_b = items[1]/support_B
+
+                maxs = max(confidence_a, confidence_b)
+
+                if(maxs > metric_threshold):
+                    finished_rule_set.append((set(condition), set(rule_set[index][condition]), maxs))
+            
+            index += 1
+    elif metric == 'kulczynski':
+        index = 0
+        for items in frequent_itemsets:
+            for condition in rule_set[index].keys():
+                support_A = 0
+                support_B = 0
+                
+                for sets in itemsets:
+                    if(sets.issuperset(condition)):
+                        support_A += 1
+                    if(sets.issuperset(rule_set[index][condition])):
+                        support_B += 1
+                
+                support_A /= len(itemsets)
+                support_B /= len(itemsets)
+                
+                #P(B|A)
+                confidence_a = items[1]/support_A
+                
+                #P(A|B)
+                confidence_b = items[1]/support_B
+
+                kul = (confidence_a + confidence_b) / 2
+
+                if(kul > metric_threshold):
+                    finished_rule_set.append((set(condition), set(rule_set[index][condition]), kul))
+            
+            index += 1
+    elif metric == 'cosine':
+        index = 0
+        for items in frequent_itemsets:
+            for condition in rule_set[index].keys():
+                support_A = 0
+                support_B = 0
+                
+                for sets in itemsets:
+                    if(sets.issuperset(condition)):
+                        support_A += 1
+                    if(sets.issuperset(rule_set[index][condition])):
+                        support_B += 1
+                
+                support_A /= len(itemsets)
+                support_B /= len(itemsets)
+                
+                #P(B|A)
+                confidence_a = items[1]/support_A
+                
+                #P(A|B)
+                confidence_b = items[1]/support_B
+
+                cosine = math.sqrt(confidence_a * confidence_b)
+
+                if(cosine > metric_threshold):
+                    finished_rule_set.append((set(condition), set(rule_set[index][condition]), cosine))
+            
+            index += 1
+
     # Should return a list of triples: condition, effect, metric value 
     # Each entry (c,e,m) represents a rule c => e, with the matric value m
     # Rules should only be included if m is greater than the given threshold.    
     # e.g. [(set(condition),set(effect),0.45), ...]
-    return []
+    return finished_rule_set
