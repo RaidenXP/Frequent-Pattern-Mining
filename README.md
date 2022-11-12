@@ -1,3 +1,5 @@
+# Lab_4 Data Mining - Frequent Pattern Mining
+
 Files contained in this framework:
 
   patterns.py: This is where apriori and the association rule extractions 
